@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microprojeto 02 - SD 2021.2</title>
+</head>
+<body>
+    <h1>Teste de websockets</h1>
+    <div>
+        <input type="text" id="mensagem" placeholder="Digite uma mensagem">
+        <input type="button" id="send" value="Enviar" onclick="solicitarOperacao()">
+    </div>
+    <div id="chat"></div>
+</body>
+    <script>
+        const HOST = location.origin.replace(/^http/, 'ws')
+        var socket = new WebSocket(HOST);
+
+        socket.onopen = function() {
+            console.log("Conectado ao servidor websocket!");
+        }
+
+        socket.onmessage = function({ data }) {
+            var msg = data.toString().split('**');
+            var html = "";
+
+            switch(msg[0]){
+                case "1":
+                    html = listarProdutos(msg);
+                    break;
+
+                case "2":
+                    html = exibirCarrinho(msg);
+                    break;
+                
+                case "6": 
+                    html = listarPedidos(msg);
+                    break;
+
+                case "3": 
+                case "4":
+                case "5":
+                case "7": 
+                    html = msg[1];
+                    break;
+            }
+            
+            var chat = document.getElementById("chat");
+            chat.innerHTML += html + "<br>";        
+            
+        }
+
+        function listarProdutos(produtos){
+            let result = "<h3>Produtos Disponíveis</h3>";
+            result += "<ul>";
+            let prod = [];
+            for (let i = 1; i < (produtos.length - 1); i++) {
+                prod = produtos[i].split(' - ');
+                result += "<li>"+ prod[0] + ' - ' + prod[1] + ' - R$ ' + parseFloat(prod[2]).toFixed(2) + '</li>';
+            }
+            result += "</ul>";
+            return result;
+        }
+
+        function exibirCarrinho(carrinho){
+            let result2 = "<h3>Carrinho de Compras</h3>";       
+            result2 += `
+                    <table border="1">
+                        <tr>
+                            <td><strong>Código</strong></td>
+                            <td><strong>Descrição</strong></td>
+                            <td><strong>Preço</strong></td>
+                            <td><strong>Quantidade</strong></td>
+                        </tr>
+                `;
+
+            let preco_total = 0;    
+            let item = [];
+            for(let i = 1; i < (carrinho.length - 1); i++){
+                item = carrinho[i].split(' - ');
+                result2 += `
+                    <tr>
+                        <td>${item[0]}</td> 
+                        <td>${item[1]}</td>
+                        <td>R$ ${parseFloat(item[2]).toFixed(2)}</td>
+                        <td>${item[3]}</td>
+                    </tr>
+                `;
+            
+                preco_total += (parseFloat(item[2]) * parseFloat(item[3]));
+            }
+
+            result2 += `
+                    <tr>
+                        <td colspan="4">TOTAL: R$ ${preco_total.toFixed(2)}</td>
+                    </tr>
+                </table>
+            
+            `;
+            return result2;
+
+        }
+
+        function listarPedidos(pedidos){
+            let result3 = "<h3>Pedidos realizados pelo cliente</h3>";       
+            result3 += `
+                    <table border="1">
+                        <tr>
+                            <td><strong>Código</strong></td>
+                            <td><strong>Valor</strong></td>
+                            <td><strong>Quantidade de produtos</strong></td>
+                            <td><strong>Status da entrega</strong></td>
+                        </tr>
+                `;
+
+            let pedido = [];
+            for(let i = 1; i < (pedidos.length - 1); i++){
+                pedido = pedidos[i].split(' - ');
+                result3 += `
+                    <tr>
+                        <td>${pedido[0]}</td> 
+                        <td>R$ ${parseFloat(pedido[1]).toFixed(2)}</td>
+                        <td>${pedido[2]}</td>
+                        <td>${pedido[3]}</td>
+                    </tr>
+                `;
+            }
+
+            result3 += `</table>`;
+            return result3;
+        }
+
+        function solicitarOperacao() {
+            var msg = document.getElementById("mensagem").value;
+            document.getElementById("mensagem").value = "";
+
+            if(msg !== "LIMPAR"){
+                socket.send(msg.toString());
+            }else{
+                var chat = document.getElementById("chat");
+                chat.innerHTML = "";
+            }            
+        }
+    </script>
+</html>
